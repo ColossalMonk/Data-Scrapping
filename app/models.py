@@ -42,5 +42,5 @@ class JobResult(BaseModel):
     job_id: str
     status: JobStatus
     progress: int = 0
-    message: Optional[str]
+    message: Optional[str] = None
     results: List[BusinessRecord] = []
