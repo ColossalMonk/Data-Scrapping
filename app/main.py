@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import csv
 import sys
+import tempfile
 import uuid
+from pathlib import Path
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -67,16 +70,23 @@ async def export_csv(job_id: str) -> FileResponse:
     job = store.get(job_id)
     if not job.results:
         raise HTTPException(status_code=400, detail="No results to export")
-    header = "name,address,phone,website,contact_name,ux_score\n"
-    rows = [
-        f"{r.name},{r.address or ''},{r.phone or ''},{r.website or ''},{r.contact_name or ''},{r.ux_score or ''}"
-        for r in job.results
-    ]
-    content = header + "\n".join(rows)
-    path = f"/tmp/{job_id}.csv"
-    with open(path, "w", encoding="utf-8") as handle:
-        handle.write(content)
-    return FileResponse(path, filename=f"{job_id}.csv")
+    temp_dir = Path(tempfile.gettempdir())
+    path = temp_dir / f"{job_id}.csv"
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(["name", "address", "phone", "website", "contact_name", "ux_score"])
+        for record in job.results:
+            writer.writerow(
+                [
+                    record.name,
+                    record.address or "",
+                    record.phone or "",
+                    record.website or "",
+                    record.contact_name or "",
+                    record.ux_score or "",
+                ]
+            )
+    return FileResponse(str(path), filename=f"{job_id}.csv")
 
 
 @app.get("/api/export/{job_id}/report")
@@ -97,10 +107,11 @@ async def export_report(job_id: str) -> FileResponse:
         lines.append("\n**Recommendations**\n")
         lines.extend([f"- {item}" for item in record.ux_recommendations])
         lines.append("\n")
-    path = f"/tmp/{job_id}.md"
-    with open(path, "w", encoding="utf-8") as handle:
+    temp_dir = Path(tempfile.gettempdir())
+    path = temp_dir / f"{job_id}.md"
+    with path.open("w", encoding="utf-8") as handle:
         handle.write("\n".join(lines))
-    return FileResponse(path, filename=f"{job_id}.md")
+    return FileResponse(str(path), filename=f"{job_id}.md")
 
 
 @app.get("/api/disclaimer")

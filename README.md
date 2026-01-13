@@ -31,3 +31,7 @@ Open `http://localhost:8000` in your browser.
 ## Notes
 
 The scraper uses Playwright to collect publicly available Google Maps data and capture website screenshots. The UX evaluator remains a heuristic placeholder; replace `app/ux_eval.py` with a richer evaluator as needed. Use throttling and respect public data policies.
+
+### Troubleshooting
+
+- **Windows Playwright errors**: If you see `NotImplementedError` from `asyncio` subprocesses, ensure Playwright is installed (`pip install playwright` + `playwright install`) and use Python 3.12+; the scraper runs Playwright in a background thread to avoid event loop limitations.
