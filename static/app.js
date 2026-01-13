@@ -15,6 +15,22 @@ const setProgress = (percent, message) => {
   progressText.textContent = message;
 };
 
+const downloadFile = async (url, fallbackName) => {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Export failed');
+  }
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('content-disposition');
+  const match = contentDisposition?.match(/filename="(.+)"/);
+  const filename = match?.[1] ?? fallbackName;
+  const link = document.createElement('a');
+  link.href = window.URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  window.URL.revokeObjectURL(link.href);
+};
+
 const renderResults = (results) => {
   if (!results.length) {
     resultsTable.classList.add('empty');
@@ -128,10 +144,14 @@ form.addEventListener('submit', async (event) => {
 
 exportCsv.addEventListener('click', () => {
   if (!activeJobId) return;
-  window.location.href = `/api/export/${activeJobId}/csv`;
+  downloadFile(`/api/export/${activeJobId}/csv`, 'businesses.csv').catch(() => {
+    setProgress(0, 'Export failed');
+  });
 });
 
 exportReport.addEventListener('click', () => {
   if (!activeJobId) return;
-  window.location.href = `/api/export/${activeJobId}/report`;
+  downloadFile(`/api/export/${activeJobId}/report`, 'ux-report.md').catch(() => {
+    setProgress(0, 'Export failed');
+  });
 });

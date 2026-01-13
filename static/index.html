@@ -43,8 +43,11 @@
           <button type="submit">Start Analysis</button>
         </form>
         <div id="progress" class="progress hidden">
+          <div class="progress-row">
+            <div class="spinner" aria-hidden="true"></div>
+            <p id="progress-text">Waiting...</p>
+          </div>
           <div class="progress-bar" id="progress-bar"></div>
-          <p id="progress-text">Waiting...</p>
         </div>
       </div>
     </header>
