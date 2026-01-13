@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Business UX Insights</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Google Maps Automation (No API)</p>
+        <h1>Business UX Insights</h1>
+        <p>
+          Discover local businesses, capture their websites, and receive professional UI/UX commentary
+          in minutes.
+        </p>
+      </div>
+      <div class="hero-card">
+        <h2>Start Analysis</h2>
+        <form id="scrape-form">
+          <label>
+            Business Type
+            <input type="text" name="businessType" placeholder="e.g. restaurants" required />
+          </label>
+          <label>
+            Location
+            <input type="text" name="location" placeholder="e.g. Austin, TX" required />
+          </label>
+          <div class="form-grid">
+            <label>
+              Results Limit
+              <input type="number" name="limit" min="1" max="50" value="5" />
+            </label>
+            <label>
+              Device
+              <select name="device">
+                <option value="desktop">Desktop</option>
+                <option value="mobile">Mobile</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit">Start Analysis</button>
+        </form>
+        <div id="progress" class="progress hidden">
+          <div class="progress-bar" id="progress-bar"></div>
+          <p id="progress-text">Waiting...</p>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="results" id="results">
+        <div class="results-header">
+          <div>
+            <h2>Results Dashboard</h2>
+            <p>Review collected data, screenshots, and professional UI/UX commentary.</p>
+          </div>
+          <div class="export-buttons">
+            <button id="export-csv" disabled>Export CSV</button>
+            <button id="export-report" disabled>Export UX Report</button>
+          </div>
+        </div>
+        <div id="results-table" class="results-table empty">
+          <p>No results yet. Run an analysis to populate the dashboard.</p>
+        </div>
+      </section>
+
+      <section class="disclaimer" id="disclaimer">
+        <h3>Ethical Use Disclaimer</h3>
+        <p>
+          This tool collects only publicly visible business information. Do not use it to access private
+          or login-protected data. Always follow local regulations and respect site policies.
+        </p>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
