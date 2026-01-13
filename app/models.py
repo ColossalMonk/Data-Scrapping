@@ -19,16 +19,16 @@ class ScrapeRequest(BaseModel):
 
 class BusinessRecord(BaseModel):
     name: str
-    address: Optional[str]
-    phone: Optional[str]
-    website: Optional[str]
-    contact_name: Optional[str]
-    screenshot_path: Optional[str]
-    ux_score: Optional[int]
-    ux_strengths: List[str] = []
-    ux_weaknesses: List[str] = []
-    ux_recommendations: List[str] = []
-    ux_summary: Optional[str]
+    address: Optional[str] = None
+    phone: Optional[str] = None
+    website: Optional[str] = None
+    contact_name: Optional[str] = None
+    screenshot_path: Optional[str] = "pending"
+    ux_score: Optional[int] = None
+    ux_strengths: List[str] = Field(default_factory=list)
+    ux_weaknesses: List[str] = Field(default_factory=list)
+    ux_recommendations: List[str] = Field(default_factory=list)
+    ux_summary: Optional[str] = None
 
 
 class JobStatus(str, Enum):
@@ -43,4 +43,4 @@ class JobResult(BaseModel):
     status: JobStatus
     progress: int = 0
     message: Optional[str] = None
-    results: List[BusinessRecord] = []
+    results: List[BusinessRecord] = Field(default_factory=list)

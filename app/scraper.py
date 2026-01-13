@@ -31,6 +31,7 @@ async def scrape_google_maps(request: ScrapeRequest) -> List[BusinessRecord]:
                 phone="(555) 010-0000",
                 website="https://example.com",
                 contact_name=None,
+                screenshot_path="pending",
             )
         )
     return demo_results
@@ -44,4 +45,5 @@ async def capture_website_screenshots(records: List[BusinessRecord], device: str
     """
     for record in records:
         await asyncio.sleep(0.05)
-        record.screenshot_path = f"screenshots/{record.name.replace(' ', '_').lower()}_{device}.png"
+        safe_name = record.name.replace(" ", "_").lower()
+        record.screenshot_path = f"screenshots/{safe_name}_{device}.png"
