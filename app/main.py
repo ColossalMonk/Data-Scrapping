@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 import uuid
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
@@ -13,6 +14,9 @@ from .ux_eval import evaluate_batch
 
 app = FastAPI(title="Business UX Insights")
 store = JobStore()
+
+if sys.platform.startswith("win"):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
