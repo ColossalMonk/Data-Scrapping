@@ -1,6 +1,6 @@
-# Radar Scout 🚀
+# Find Flare ✨
 
-Radar Scout is a high-accuracy business intelligence tool designed to scrape Google Maps data, evaluate lead websites, and generate actionable UX insights.
+Find Flare is a high-accuracy business intelligence tool designed to scrape Google Maps data, evaluate lead websites, and generate actionable UX insights.
 
 ## ✨ Features
 

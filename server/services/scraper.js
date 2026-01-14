@@ -9,19 +9,112 @@ if (!fs.existsSync(SCREENSHOT_DIR)) {
     fs.mkdirSync(SCREENSHOT_DIR, { recursive: true });
 }
 
-// --- GEOCODING HELPER (Nominatim - FREE, no API key) ---
+// --- GEOCODING HELPER (Nominatim - FREE, no API key) - GLOBAL ---
 async function geocodeLocation(locationName) {
     try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=1`;
+        console.log(`[GEOCODE] Geocoding: "${locationName}"`);
+        
+        // Request with higher limit to get better matches globally
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(locationName)}&format=json&limit=20&addressdetails=1`;
         const response = await fetch(url, {
-            headers: { 'User-Agent': 'RadarScout/1.0' }
+            headers: { 'User-Agent': 'FindFlare/1.0' }
         });
         const data = await response.json();
+        
         if (data && data.length > 0) {
-            return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            console.log(`[GEOCODE] Got ${data.length} candidates from Nominatim`);
+            
+            // Scoring logic that works globally for any location type
+            const scored = data.map((result, idx) => {
+                let score = 0;
+                const type = result.type || '';
+                const category = result.category || '';
+                const addressType = result.addresstype || '';
+                const displayName = result.display_name || '';
+                const importance = parseFloat(result.importance || 0);
+                
+                console.log(`  [${idx + 1}] ${type}/${category} - ${displayName.substring(0, 70)}`);
+                
+                // PREFER SPECIFIC LOCATIONS over administrative regions
+                // Specific: neighborhoods, villages, cities, landmarks, addresses, POIs
+                if (['neighbourhood', 'suburb', 'village', 'town', 'city', 'residential', 'commercial', 'building', 'house', 'apartment'].includes(type)) {
+                    score += 30;
+                }
+                
+                // Landmarks, tourist attractions, amenities
+                if (category === 'historic' || category === 'tourism' || category === 'amenity' || category === 'leisure') {
+                    score += 25;
+                }
+                
+                // Places (including landmarks, parks, etc)
+                if (category === 'place' || category === 'landuse') {
+                    score += 15;
+                }
+                
+                // PENALIZE vague administrative boundaries
+                if (type === 'administrative' || type === 'boundary') {
+                    // Small boost if it's a city/county level (not state/country)
+                    if (displayName.match(/city|county|district/i)) {
+                        score += 5;
+                    } else {
+                        score -= 30;  // State/country level is too broad
+                    }
+                }
+                
+                // Penalize very large regions
+                if (displayName.match(/^(state|province|country|region)\s/i) || displayName.match(/,\s*(state|province|country)\s*$/i)) {
+                    score -= 40;
+                }
+                
+                // MATCH QUALITY: Higher importance = more relevant generally
+                score += importance * 50;
+                
+                // QUERY RELEVANCE: Prefer results that closely match the query
+                const queryLower = locationName.toLowerCase();
+                const displayLower = displayName.toLowerCase();
+                
+                // Exact match at start
+                if (displayLower.startsWith(queryLower)) {
+                    score += 20;
+                }
+                
+                // Query words appear in result
+                const queryWords = queryLower.split(/[\s,]+/).filter(w => w.length > 2);
+                const resultWords = displayLower.split(/[\s,]+/);
+                const matchingWords = queryWords.filter(w => resultWords.some(r => r.includes(w) || w.includes(r)));
+                score += matchingWords.length * 5;
+                
+                // Prefer shorter, more specific results
+                const displayWords = displayName.split(',').length;
+                if (displayWords <= 3) {
+                    score += 5;  // More specific
+                } else if (displayWords > 5) {
+                    score -= 5;  // Too vague
+                }
+                
+                return { result, score, idx, type, importance };
+            });
+            
+            // Sort by score
+            scored.sort((a, b) => b.score - a.score);
+            const best = scored[0];
+            
+            console.log(`[GEOCODE] ✓ Selected: "${best.result.display_name}" (${best.type}, score: ${best.score.toFixed(1)})`);
+            
+            const coords = { 
+                lat: parseFloat(best.result.lat), 
+                lng: parseFloat(best.result.lon),
+                displayName: best.result.display_name,
+                type: best.result.type,
+                score: best.score
+            };
+            
+            return coords;
+        } else {
+            console.log(`[GEOCODE] ⚠ No results found for: "${locationName}"`);
         }
     } catch (e) {
-        console.log('[GEOCODE] Failed:', e.message);
+        console.log('[GEOCODE] Error:', e.message);
     }
     return null;
 }
@@ -327,14 +420,31 @@ async function runScrapingPipeline(jobId, businessType, location, options) {
 }
 
 async function extractDetails(page, job) {
-    const details = { website: null, phone: null, address: null, reviews: { rating: null, count: null } };
+    const details = { 
+        website: null, 
+        phone: null, 
+        address: null, 
+        reviews: { 
+            rating: null, 
+            count: null,
+            breakdown: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 },
+            reviews: []
+        } 
+    };
     
-    // TRACKING FOR STALE DETECTION
-    const lastWebsite = page._lastWebsite;
-    const lastPhone = page._lastPhone;
-    const lastAddress = page._lastAddress;
-    const lastRating = page._lastRating;
-    const lastCount = page._lastCount;
+    // TRACKING FOR STALE DETECTION - Read THEN RESET
+    const lastWebsite = page._lastWebsite || null;
+    const lastPhone = page._lastPhone || null;
+    const lastAddress = page._lastAddress || null;
+    const lastRating = page._lastRating || null;
+    const lastCount = page._lastCount || null;
+    
+    // Reset state for fresh extraction
+    page._lastWebsite = null;
+    page._lastPhone = null;
+    page._lastAddress = null;
+    page._lastRating = null;
+    page._lastCount = null;
 
     const isValidWeb = (url) => {
         if (!url) return false;
@@ -398,39 +508,242 @@ async function extractDetails(page, job) {
 
     // 4. REVIEWS (Hardened)
     try {
-        // RATING
+        // RATING - Extract overall star rating
         const rSpan = page.locator('span[role="img"][aria-label*="star"]').first();
         if (await rSpan.count() > 0) {
             const label = await rSpan.getAttribute('aria-label');
             const match = label?.match(/(\d+\.?\d*)/);
-            if (match) details.reviews.rating = match[1];
+            if (match) {
+                details.reviews.rating = match[1];
+                console.log(`[REVIEWS] Rating found: ${details.reviews.rating} from "${label}"`);
+            }
         }
 
-        // COUNT
-        const cBtn = page.locator('button[aria-label*="review"], a[aria-label*="review"]').first();
-        if (await cBtn.count() > 0) {
-            const label = await cBtn.getAttribute('aria-label');
-            const match = label?.match(/(\d[\d,\.]*)/);
-            if (match) {
-                const count = match[1].replace(/,/g, '');
-                // Stale count detection
-                if (count === lastCount && details.reviews.rating === lastRating && count !== '0') {
-                    console.log(`[STALE] Review count ${count} might be old. Waiting...`);
-                    await page.waitForTimeout(800);
-                    const freshLabel = await cBtn.getAttribute('aria-label');
-                    const freshMatch = freshLabel?.match(/(\d[\d,\.]*)/);
-                    if (freshMatch) details.reviews.count = freshMatch[1].replace(/,/g, '');
+        // COUNT - Multiple fallback selectors for robustness
+        let foundCount = false;
+        console.log(`[REVIEWS] Starting review count extraction...`);
+        
+        // Google Maps can display review count in various formats
+        // Try to get the rating element which usually contains review count
+        let ratingElement = page.locator('button[aria-label*="rating"]').first();
+        let ratingCount = await ratingElement.count();
+        
+        if (ratingCount === 0) {
+            ratingElement = page.locator('[aria-label*="rating"]').first();
+            ratingCount = await ratingElement.count();
+        }
+        
+        if (ratingCount > 0) {
+            const label = await ratingElement.getAttribute('aria-label');
+            console.log(`[REVIEWS] Rating element label: "${label}"`);
+            
+            // Try multiple patterns to extract the review count
+            let count = null;
+            
+            // Pattern 1: "(174 reviews)" or "(174)"
+            let match = label?.match(/\((\d+(?:[,\.]\d+)*)\s*(?:reviews?|ratings?)?\)/i);
+            if (match && match[1]) {
+                count = match[1].replace(/,/g, '').replace(/\./g, '');
+                console.log(`[REVIEWS] Pattern 1 matched: "${match[0]}" → ${count}`);
+            }
+            
+            // Pattern 2: "174 reviews" or "174 ratings" (standalone)
+            if (!count) {
+                match = label?.match(/(\d+(?:[,\.]\d+)*)\s+(?:reviews?|ratings?)/i);
+                if (match && match[1]) {
+                    count = match[1].replace(/,/g, '').replace(/\./g, '');
+                    console.log(`[REVIEWS] Pattern 2 matched: "${match[0]}" → ${count}`);
+                }
+            }
+            
+            // Pattern 3: "reviews: 174" or "ratings: 174"
+            if (!count) {
+                match = label?.match(/(?:reviews?|ratings?)[\s:]*(\d+(?:[,\.]\d+)*)/i);
+                if (match && match[1]) {
+                    count = match[1].replace(/,/g, '').replace(/\./g, '');
+                    console.log(`[REVIEWS] Pattern 3 matched: "${match[0]}" → ${count}`);
+                }
+            }
+            
+            if (count) {
+                const countNum = parseInt(count, 10);
+                console.log(`[REVIEWS] Extracted count: ${countNum}`);
+                
+                // Validate
+                if (countNum > 0 && countNum < 10000000) {
+                    details.reviews.count = countNum.toString();
+                    foundCount = true;
+                    console.log(`[REVIEWS] ✓ Accepted: ${countNum} reviews`);
                 } else {
-                    details.reviews.count = count;
+                    console.log(`[REVIEWS] Count ${countNum} out of valid range, trying fallback...`);
+                }
+            } else {
+                console.log(`[REVIEWS] No patterns matched in: "${label}"`);
+            }
+        }
+        
+        // Fallback: Try button with reviews text
+        if (!foundCount) {
+            console.log(`[REVIEWS] Trying reviews button fallback...`);
+            let cBtn = page.locator('button[aria-label*="review"]').first();
+            let reviewButtonCount = await cBtn.count();
+            
+            if (reviewButtonCount === 0) {
+                cBtn = page.locator('a[aria-label*="review"]').first();
+                reviewButtonCount = await cBtn.count();
+            }
+            
+            if (reviewButtonCount > 0) {
+                const label = await cBtn.getAttribute('aria-label');
+                console.log(`[REVIEWS] Reviews button label: "${label}"`);
+                
+                // Try to extract number from review button
+                let match = label?.match(/(\d+(?:[,\.]\d+)*)\s*(?:reviews?|ratings?)/i);
+                if (!match) {
+                    match = label?.match(/(\d+(?:[,\.]\d+)*)/);
+                }
+                
+                if (match && match[1]) {
+                    let countStr = match[1].replace(/,/g, '').replace(/\./g, '');
+                    let countNum = parseInt(countStr, 10);
+                    
+                    console.log(`[REVIEWS] Found review count from reviews button: ${countNum}`);
+                    
+                    if (countNum > 0 && countNum < 10000000) {
+                        details.reviews.count = countNum.toString();
+                        foundCount = true;
+                        console.log(`[REVIEWS] ✓ Accepted from button: ${countNum} reviews`);
+                    }
                 }
             }
         }
         
-        // Fallback for "0 reviews" or "New"
-        if (!details.reviews.count && await page.locator('text="No reviews"').count() > 0) {
+        // Fallback 2: If still no count found, search page text
+        if (!foundCount) {
+            console.log(`[REVIEWS] Trying page text fallback...`);
+            const pageText = await page.locator('body').textContent();
+            
+            // Pattern 1: "(NUMBER reviews)" - most specific
+            let match = pageText?.match(/\((\d+(?:[,\.]\d+)*)\s+reviews?\)/i);
+            
+            // Pattern 2: "NUMBER reviews" (word boundary)
+            if (!match) {
+                match = pageText?.match(/\b(\d+(?:[,\.]\d+)*)\s+reviews?\b/i);
+            }
+            
+            // Pattern 3: "reviews: NUMBER" or "reviews (NUMBER)"
+            if (!match) {
+                match = pageText?.match(/reviews?[\s:\(]*(\d+(?:[,\.]\d+)*)/i);
+            }
+            
+            if (match && match[1]) {
+                let countStr = match[1].replace(/,/g, '').replace(/\./g, '');
+                let countNum = parseInt(countStr, 10);
+                
+                console.log(`[REVIEWS] Text fallback matched: "${match[0]}" → ${countNum}`);
+                
+                if (countNum > 0 && countNum < 10000000) {
+                    details.reviews.count = countNum.toString();
+                    foundCount = true;
+                    console.log(`[REVIEWS] ✓ Accepted from text: ${countNum} reviews`);
+                } else {
+                    console.log(`[REVIEWS] Text fallback: ${countNum} out of range`);
+                }
+            }
+        }
+
+        if (!foundCount) {
+            console.log(`[REVIEWS] ⚠ WARNING: Could not extract review count - defaulting to "0"`);
             details.reviews.count = '0';
         }
-    } catch (e) { }
+        
+        console.log(`[REVIEWS] FINAL: Review count = ${details.reviews.count}`);
+
+        // STAR BREAKDOWN - Try to extract 5-star, 4-star, etc. counts
+        try {
+            const breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+            console.log(`[STAR-BREAKDOWN] Attempting to extract star distribution...`);
+            console.log(`[STAR-BREAKDOWN] Total review count for validation: ${details.reviews.count}`);
+            
+            const totalReviews = parseInt(details.reviews.count, 10) || 1;
+            
+            if (totalReviews === 0) {
+                console.log(`[STAR-BREAKDOWN] No reviews, skipping breakdown extraction.`);
+            } else {
+                // Look for star rating buttons/filters - try multiple selectors
+                let foundAny = false;
+                
+                for (let stars = 5; stars >= 1; stars--) {
+                    // Try multiple selector variations
+                    let starBtn = page.locator(`button[aria-label*="${stars} star"]`).first();
+                    let starCount = await starBtn.count();
+                    
+                    if (starCount === 0) {
+                        starBtn = page.locator(`[aria-label*="${stars} star"]`).first();
+                        starCount = await starBtn.count();
+                    }
+                    
+                    if (starCount === 0) {
+                        starBtn = page.locator(`[aria-label*="${stars}★"]`).first();
+                        starCount = await starBtn.count();
+                    }
+                    
+                    if (starCount > 0) {
+                        const label = await starBtn.getAttribute('aria-label');
+                        console.log(`[STAR-BREAKDOWN] Found ${stars}-star element: "${label}"`);
+                        
+                        // Extract number - only accept patterns directly related to stars/reviews
+                        let match;
+                        
+                        // Pattern 1: "(NUMBER)" - parentheses with just a number
+                        match = label?.match(/\((\d+(?:[,\.]\d+)*)\)/);
+                        
+                        // Pattern 2: "NUMBER reviews" or "NUMBER ratings" - number followed by keyword
+                        if (!match) {
+                            match = label?.match(/(\d+(?:[,\.]\d+)*)\s+(?:reviews?|ratings?)/i);
+                        }
+                        
+                        // Pattern 3: "reviews: NUMBER" or "ratings: NUMBER"
+                        if (!match) {
+                            match = label?.match(/(?:reviews?|ratings?)[\s:]*(\d+(?:[,\.]\d+)*)/i);
+                        }
+                        
+                        if (match && match[1]) {
+                            let countStr = match[1].replace(/,/g, '').replace(/\./g, '');
+                            let numValue = parseInt(countStr, 10);
+                            
+                            console.log(`[STAR-BREAKDOWN] Parsed "${match[0]}" → ${numValue}`);
+                            
+                            // Validate: count should be reasonable and not zero
+                            if (numValue > 0 && numValue <= totalReviews * 1.5) {
+                                breakdown[stars] = numValue;
+                                foundAny = true;
+                                console.log(`[STAR-BREAKDOWN] ✓ ${stars}-star: ${numValue}`);
+                            } else if (numValue === 0) {
+                                console.log(`[STAR-BREAKDOWN] ${stars}-star: 0 reviews (valid, keeping as 0)`);
+                            } else {
+                                console.log(`[STAR-BREAKDOWN] ${stars}-star: ${numValue} (out of range, rejecting)`);
+                            }
+                        } else {
+                            console.log(`[STAR-BREAKDOWN] No matching patterns in "${label}"`);
+                        }
+                    }
+                }
+                
+                if (!foundAny) {
+                    console.log(`[STAR-BREAKDOWN] No star rating elements found on page (may not be visible in this view).`);
+                }
+            }
+            
+            details.reviews.breakdown = breakdown;
+            console.log(`[STAR-BREAKDOWN] Final breakdown:`, details.reviews.breakdown);
+        } catch (e) {
+            console.log(`[STAR-BREAKDOWN] Extraction failed:`, e.message);
+            details.reviews.breakdown = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+        }
+    } catch (e) { 
+        console.log(`[REVIEWS] Error during review extraction:`, e.message);
+    }
 
     return details;
 }

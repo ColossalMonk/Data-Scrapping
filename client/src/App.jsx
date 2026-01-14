@@ -140,16 +140,34 @@ function App() {
           )}
         </button>
 
-        <h1 style={{
-          fontSize: '3.5rem',
-          fontWeight: 800,
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1.2rem',
           marginBottom: '1rem',
-          letterSpacing: '-0.02em',
-          color: '#FF6154',
-          display: 'inline-block'
+          justifyContent: 'center'
         }}>
-          Radar Scout
-        </h1>
+          <img 
+            src="/find-flare.svg" 
+            alt="Find Flare Logo" 
+            style={{
+              height: '3.5rem',
+              width: 'auto',
+              filter: 'drop-shadow(0 4px 12px rgba(255, 107, 53, 0.15))',
+              animation: 'none'
+            }}
+          />
+          <h1 style={{
+            fontSize: '3.5rem',
+            fontWeight: 800,
+            margin: 0,
+            letterSpacing: '-0.02em',
+            color: '#FF6154',
+            lineHeight: 1
+          }}>
+            Find Flare
+          </h1>
+        </div>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem' }}>
           Business Intelligence Recon • Find Leads Fast
         </p>
