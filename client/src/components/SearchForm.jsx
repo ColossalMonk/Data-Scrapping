@@ -5,6 +5,8 @@ function SearchForm({ onSearch }) {
     const [location, setLocation] = useState('');
     const [loading, setLoading] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
+    const [geoLoading, setGeoLoading] = useState(false);
+    const [geoError, setGeoError] = useState(null);
 
     // Advanced State
     const [maxResults, setMaxResults] = useState(20);
@@ -20,6 +22,41 @@ function SearchForm({ onSearch }) {
     const [showSaved, setShowSaved] = useState(false);
 
     const isPinPoint = lat.trim() !== '' && lng.trim() !== '';
+
+    const handleGetCurrentLocation = () => {
+        setGeoLoading(true);
+        setGeoError(null);
+
+        if (!navigator.geolocation) {
+            setGeoError('Geolocation is not supported by your browser');
+            setGeoLoading(false);
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const latitude = position.coords.latitude.toFixed(4);
+                const longitude = position.coords.longitude.toFixed(4);
+                setLat(latitude);
+                setLng(longitude);
+                setGeoLoading(false);
+                setGeoError(null);
+            },
+            (error) => {
+                console.error('Geolocation error:', error);
+                let errorMessage = 'Unable to get your location';
+                if (error.code === error.PERMISSION_DENIED) {
+                    errorMessage = 'Location permission denied. Please enable location access.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    errorMessage = 'Location information is unavailable.';
+                } else if (error.code === error.TIMEOUT) {
+                    errorMessage = 'Location request timed out.';
+                }
+                setGeoError(errorMessage);
+                setGeoLoading(false);
+            }
+        );
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -84,7 +121,82 @@ function SearchForm({ onSearch }) {
                             cursor: isPinPoint ? 'not-allowed' : 'text'
                         }}
                     />
+
+                    <button
+                        type="button"
+                        onClick={handleGetCurrentLocation}
+                        disabled={geoLoading || loading}
+                        title={lat && lng ? `Current Location: ${lat}, ${lng}` : 'Get your current location'}
+                        style={{
+                            padding: '1rem 1.2rem',
+                            background: lat && lng ? 'var(--accent-success, #10B981)' : 'var(--accent-primary, #3B82F6)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: geoLoading || loading ? 'not-allowed' : 'pointer',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
+                            transition: 'all 0.2s',
+                            opacity: geoLoading || loading ? 0.6 : 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            whiteSpace: 'nowrap'
+                        }}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        {geoLoading ? 'Locating...' : lat && lng ? 'Located' : 'Get Location'}
+                    </button>
                 </div>
+
+                {geoError && (
+                    <div style={{
+                        padding: '0.75rem 1rem',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderRadius: '6px',
+                        color: '#DC2626',
+                        fontSize: '0.9rem'
+                    }}>
+                        ⚠️ {geoError}
+                    </div>
+                )}
+
+                {lat && lng && (
+                    <div style={{
+                        padding: '0.75rem 1rem',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        borderRadius: '6px',
+                        color: '#059669',
+                        fontSize: '0.9rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                    }}>
+                        <span>✓ Location: <strong>{lat}, {lng}</strong></span>
+                        <button
+                            type="button"
+                            onClick={() => { setLat(''); setLng(''); setGeoError(null); }}
+                            style={{
+                                background: 'rgba(16, 185, 129, 0.2)',
+                                border: '1px solid rgba(16, 185, 129, 0.4)',
+                                borderRadius: '4px',
+                                padding: '0.3rem 0.8rem',
+                                cursor: 'pointer',
+                                color: '#059669',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            Clear
+                        </button>
+                    </div>
+                )}
 
                 {/* Saved Searches Dropdown */}
                 {savedSearches.length > 0 && (
