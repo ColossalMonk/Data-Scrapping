@@ -1,123 +1,18 @@
-<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<svg width="240" height="240" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" transform="scale(-1)">
   <defs>
-    <!-- Linear gradient for upward burst (fire-like) -->
-    <linearGradient id="flameBurst" x1="50%" y1="100%" x2="50%" y2="0%">
-      <stop offset="0%" style="stop-color:#FF3A1F;stop-opacity:1" />
-      <stop offset="40%" style="stop-color:#FF6154;stop-opacity:1" />
-      <stop offset="70%" style="stop-color:#FFB84D;stop-opacity:0.95" />
-      <stop offset="100%" style="stop-color:#FFE680;stop-opacity:0.7" />
+    <linearGradient id="a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff7a45"/>
+      <stop offset="50%" stop-color="#ff3d2e"/>
+      <stop offset="100%" stop-color="#b91414"/>
     </linearGradient>
-
-    <!-- Core bright white gradient -->
-    <radialGradient id="flareCore" cx="50%" cy="60%" r="60%">
-      <stop offset="0%" style="stop-color:#FFFACD;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#FFE680;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#FFB84D;stop-opacity:0.8" />
-    </radialGradient>
-
-    <!-- Ember trail gradient -->
-    <radialGradient id="emberGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" style="stop-color:#FF8E45;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#FF6154;stop-opacity:0" />
-    </radialGradient>
-
-    <!-- Glow effect -->
-    <filter id="brightGlow">
-      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+    <filter id="b">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
       <feMerge>
-        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-
-    <!-- Strong glow for core -->
-    <filter id="intensGlow">
-      <feGaussianBlur stdDeviation="3.5" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <!-- Animation for flickering embers -->
-    <style>
-      @keyframes flicker {
-        0%, 100% { opacity: 0.6; }
-        50% { opacity: 1; }
-      }
-      @keyframes float {
-        0% { transform: translateY(0px); opacity: 1; }
-        100% { transform: translateY(-15px); opacity: 0; }
-      }
-      @keyframes glow-pulse {
-        0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 97, 84, 0.5)); }
-        50% { filter: drop-shadow(0 0 15px rgba(255, 97, 84, 0.8)); }
-      }
-      .ember { animation: float 2s ease-out infinite; }
-      .core { animation: glow-pulse 2s ease-in-out infinite; }
-    </style>
   </defs>
-
-  <!-- TRAILING EMBERS (bottom - falling particles effect) -->
-  <!-- Ember 1 -->
-  <g class="ember" style="animation-delay: 0s">
-    <circle cx="90" cy="140" r="4" fill="#FF8E45" opacity="0.7"/>
-    <circle cx="90" cy="140" r="6" fill="#FF6154" opacity="0.3" filter="url(#brightGlow)"/>
-  </g>
-
-  <!-- Ember 2 -->
-  <g class="ember" style="animation-delay: 0.4s">
-    <circle cx="110" cy="145" r="3.5" fill="#FFB84D" opacity="0.6"/>
-    <circle cx="110" cy="145" r="5.5" fill="#FF8E45" opacity="0.25" filter="url(#brightGlow)"/>
-  </g>
-
-  <!-- Ember 3 -->
-  <g class="ember" style="animation-delay: 0.8s">
-    <circle cx="100" cy="150" r="3" fill="#FF6154" opacity="0.5"/>
-    <circle cx="100" cy="150" r="5" fill="#FFB84D" opacity="0.2" filter="url(#brightGlow)"/>
-  </g>
-
-  <!-- Ember 4 -->
-  <g class="ember" style="animation-delay: 1.2s">
-    <circle cx="85" cy="135" r="2.5" fill="#FFE680" opacity="0.6"/>
-    <circle cx="85" cy="135" r="4.5" fill="#FF6154" opacity="0.2" filter="url(#brightGlow)"/>
-  </g>
-
-  <!-- Ember 5 -->
-  <g class="ember" style="animation-delay: 1.6s">
-    <circle cx="115" cy="130" r="3.2" fill="#FF8E45" opacity="0.65"/>
-    <circle cx="115" cy="130" r="5.2" fill="#FFB84D" opacity="0.25" filter="url(#brightGlow)"/>
-  </g>
-
-  <!-- MAIN BURST FLAME - Upward pointing shape -->
-  <!-- Large outer flame shape -->
-  <path d="M 100 160 Q 70 120 75 60 Q 80 20 100 10 Q 120 20 125 60 Q 130 120 100 160 Z" 
-        fill="url(#flameBurst)" filter="url(#intensGlow)" opacity="0.95"/>
-
-  <!-- Secondary flame layers for depth -->
-  <path d="M 100 155 Q 78 122 82 65 Q 86 28 100 18 Q 114 28 118 65 Q 122 122 100 155 Z" 
-        fill="#FFB84D" filter="url(#brightGlow)" opacity="0.6"/>
-
-  <!-- Core bright inner flame -->
-  <path d="M 100 145 Q 88 115 90 75 Q 92 40 100 30 Q 108 40 110 75 Q 112 115 100 145 Z" 
-        fill="url(#flareCore)" filter="url(#intensGlow)" opacity="0.9" class="core"/>
-
-  <!-- Bright white center spark -->
-  <ellipse cx="100" cy="65" rx="12" ry="18" fill="#FFFACD" opacity="0.85" filter="url(#intensGlow)"/>
-  <ellipse cx="100" cy="55" rx="8" ry="12" fill="#FFFFFF" opacity="0.9" filter="url(#intensGlow)" class="core"/>
-
-  <!-- Upper spark tip -->
-  <circle cx="100" cy="25" r="6" fill="#FFE680" opacity="0.8" filter="url(#intensGlow)"/>
-  <circle cx="100" cy="20" r="3" fill="#FFFFFF" opacity="1"/>
-
-  <!-- Left side accent flame -->
-  <path d="M 75 110 Q 55 90 58 50 Q 60 25 72 18" 
-        stroke="#FF8E45" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.6" filter="url(#brightGlow)"/>
-
-  <!-- Right side accent flame -->
-  <path d="M 125 110 Q 145 90 142 50 Q 140 25 128 18" 
-        stroke="#FFB84D" stroke-width="8" fill="none" stroke-linecap="round" opacity="0.5" filter="url(#brightGlow)"/>
-
-  <!-- Center bottom glow circle (ember source) -->
-  <circle cx="100" cy="165" r="20" fill="url(#emberGlow)" opacity="0.4"/>
+  <path d="M60 40h120l20 60-60 100-60-40-40-60Z" fill="url(#a)" filter="url(#b)"/>
+  <path d="m100 100 40 20-20 20-40-20Z" fill="#fff" opacity=".85"/>
 </svg>

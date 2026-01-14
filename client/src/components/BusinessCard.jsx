@@ -40,7 +40,7 @@ function BusinessCard({ data }) {
                     <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', flexDirection: 'column', gap: '5px', alignItems: 'flex-end' }}>
                         {data.reviews && data.reviews.rating && (
                             <span className="badge badge-yellow" style={{ background: '#FEF3C7', color: '#D97706', border: '1px solid #FCD34D', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                                {data.reviews.rating} ({data.reviews.count || '0'})
+                                {data.reviews.rating} ({parseInt(data.reviews.count || '0', 10).toLocaleString()})
                             </span>
                         )}
                         {uxAnalysis && uxAnalysis.score !== undefined && (
@@ -220,7 +220,9 @@ function BusinessCard({ data }) {
                                     <div style={{ padding: '2.5rem', background: 'var(--bg-page)', borderRadius: '24px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
                                         <div style={{ fontSize: '4.5rem', fontWeight: 900, color: '#D97706', lineHeight: 1 }}>{data.reviews?.rating || 'N/A'}</div>
                                         <div style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginTop: '1rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overall Rating</div>
-                                        <div style={{ marginTop: '1.5rem', fontSize: '1.3rem', fontWeight: 700 }}>{data.reviews?.count || '0'} Reviews</div>
+                                        <div style={{ marginTop: '1.5rem', fontSize: '1.3rem', fontWeight: 700 }}>
+                                            {parseInt(data.reviews?.count || '0', 10).toLocaleString()} Reviews
+                                        </div>
                                     </div>
 
                                     {/* Star Breakdown Section */}
@@ -230,27 +232,28 @@ function BusinessCard({ data }) {
                                                 <div style={{ width: '8px', height: '24px', background: '#FFD166', borderRadius: '4px' }}></div>
                                                 <strong style={{ fontSize: '1.2rem', fontWeight: 800 }}>Rating Breakdown</strong>
                                             </div>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                                 {[5, 4, 3, 2, 1].map((stars) => {
                                                     const count = data.reviews.breakdown[stars] || 0;
                                                     const total = parseInt(data.reviews.count) || 1;
-                                                    const percentage = total > 0 ? (count / total) * 100 : 0;
+                                                    const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
                                                     return (
-                                                        <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                            <div style={{ minWidth: '80px', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                {'⭐'.repeat(stars)} {stars} Star
+                                                        <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                                                            <div style={{ minWidth: '100px', fontWeight: 600, fontSize: '1rem', flexShrink: 0 }}>
+                                                                {'⭐'.repeat(stars)} {stars} {stars === 1 ? 'Star' : 'Stars'}
                                                             </div>
-                                                            <div style={{ flex: 1, background: 'var(--bg-page)', height: '20px', borderRadius: '8px', position: 'relative', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                                                            <div style={{ width: '300px', background: 'var(--border-light)', height: '24px', borderRadius: '12px', position: 'relative', overflow: 'hidden', border: '1px solid var(--border-light)', flexShrink: 0 }}>
                                                                 <div style={{ 
                                                                     height: '100%', 
-                                                                    width: `${percentage}%`, 
-                                                                    background: `hsl(${(5 - stars) * 12}, 80%, 55%)`,
-                                                                    borderRadius: '8px',
-                                                                    transition: 'width 0.3s ease'
+                                                                    width: `${Math.max(percentage, 2)}%`,  // Minimum 2% width to stay visible
+                                                                    background: `linear-gradient(90deg, hsl(${(5-stars)*12}, 85%, 50%), hsl(${(5-stars)*12}, 85%, 60%))`,
+                                                                    borderRadius: '12px',
+                                                                    transition: 'width 0.4s ease',
+                                                                    boxShadow: `0 2px 8px hsla(${(5-stars)*12}, 85%, 50%, 0.3)`
                                                                 }} />
                                                             </div>
-                                                            <div style={{ minWidth: '60px', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                                                {count} ({percentage.toFixed(0)}%)
+                                                            <div style={{ minWidth: '70px', textAlign: 'right', fontWeight: 700, color: 'var(--text-secondary)', fontSize: '1rem', flexShrink: 0 }}>
+                                                                {count.toLocaleString()} ({percentage}%)
                                                             </div>
                                                         </div>
                                                     );
