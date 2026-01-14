@@ -1,0 +1,7 @@
+<svg width="400" height="300" viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="400" height="300" fill="#F3F4F6"/>
+  <rect x="150" y="100" width="100" height="70" rx="8" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="200" cy="135" r="15" stroke="#9CA3AF" stroke-width="2"/>
+  <path d="M150 150L180 130L210 155L230 145L250 160V170H150V150Z" fill="#E5E7EB" stroke="#9CA3AF" stroke-width="2"/>
+  <text x="50%" y="220" text-anchor="middle" fill="#9CA3AF" font-family="sans-serif" font-size="14" font-weight="500">Preview Not Available</text>
+</svg>

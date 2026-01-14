@@ -1,37 +1,65 @@
-# Business UX Insights
+# Radar Scout 🚀
 
-Web-based application to collect Google Maps business data (without the Maps API), capture screenshots, and generate UI/UX commentary.
+Radar Scout is a high-accuracy business intelligence tool designed to scrape Google Maps data, evaluate lead websites, and generate actionable UX insights.
 
-## Features
+## ✨ Features
 
-- Search by business type and location.
-- Optional result limit and device type.
-- Progress tracker and results dashboard.
-- Export CSV data and Markdown UX reports.
-- Ethical-use disclaimer.
+- **Sequential Scraping Engine**: 100% data fidelity with state-aware extraction (no data carryover between leads).
+- **Precision Geocoding**: Search by any city or use pixel-perfect Lat/Lng coordinates with radius controls.
+- **Deep-Dive Intelligence**: Automated website UX scoring, email extraction, and visual screenshots.
+- **Premium Dashboard**: Professional, icon-driven UI with Dark Mode support and real-time progress tracking.
+- **Lead Management**: Filter leads by quality and export results directly to CSV.
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- FastAPI backend with background jobs.
-- Vanilla HTML/CSS/JS frontend.
-- Playwright automation for Google Maps scraping and screenshots.
+- **Frontend**: React 19 (Vite), Leaflet (Map Visuals), Vanilla CSS (Premium Glassmorphism).
+- **Backend**: Node.js, Express.
+- **Automation**: Playwright (Headless Browser), Nominatim API (Geocoding).
 
-## Getting Started
+## 🚀 Getting Started
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-playwright install
-uvicorn app.main:app --reload
-```
+### Prerequisites
+- Node.js (v18+)
+- NPM
 
-Open `http://localhost:8000` in your browser.
+### Installation
 
-## Notes
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/ColossalMonk/Data-Scrapping.git
+   cd Data-Scrapping
+   ```
 
-The scraper uses Playwright to collect publicly available Google Maps data and capture website screenshots. The UX evaluator remains a heuristic placeholder; replace `app/ux_eval.py` with a richer evaluator as needed. Use throttling and respect public data policies.
+2. **Setup Server**:
+   ```bash
+   cd server
+   npm install
+   npx playwright install chromium
+   ```
 
-### Troubleshooting
+3. **Setup Client**:
+   ```bash
+   cd ../client
+   npm install
+   ```
 
-- **Windows Playwright errors**: If you see `NotImplementedError` from `asyncio` subprocesses, ensure Playwright is installed (`pip install playwright` + `playwright install`) and use Python 3.12+; the scraper runs Playwright in a background thread to avoid event loop limitations.
+### Running the App
+
+1. **Start Backend**:
+   ```bash
+   cd server
+   node index.js
+   ```
+
+2. **Start Frontend**:
+   ```bash
+   cd client
+   npm run dev
+   ```
+
+Visit `http://localhost:5173` to start scouting.
+
+---
+
+## 🛡️ License
+Ethical Use Only. Respect Google Maps' terms of service and public data policies.
