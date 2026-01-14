@@ -148,7 +148,7 @@ function App() {
           color: '#FF6154',
           display: 'inline-block'
         }}>
-          Radar Scout
+          Find Flare
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '1.25rem' }}>
           Business Intelligence Recon • Find Leads Fast

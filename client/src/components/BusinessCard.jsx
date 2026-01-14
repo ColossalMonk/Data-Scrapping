@@ -215,14 +215,52 @@ function BusinessCard({ data }) {
                             )}
 
                             {activeTab === 'reviews' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', textAlign: 'center', padding: '2rem 0' }}>
-                                    <div style={{ padding: '3rem', background: 'var(--bg-page)', borderRadius: '24px', border: '1px solid var(--border-light)' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', padding: '2rem' }}>
+                                    {/* Overall Rating Section */}
+                                    <div style={{ padding: '2.5rem', background: 'var(--bg-page)', borderRadius: '24px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
                                         <div style={{ fontSize: '4.5rem', fontWeight: 900, color: '#D97706', lineHeight: 1 }}>{data.reviews?.rating || 'N/A'}</div>
-                                        <div style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginTop: '1rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Meta-Score Rating</div>
-                                        <div style={{ marginTop: '2rem', fontSize: '1.5rem', fontWeight: 700 }}>{data.reviews?.count || '0'} Cumulative Reviews</div>
+                                        <div style={{ fontSize: '1.25rem', color: 'var(--text-secondary)', marginTop: '1rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Overall Rating</div>
+                                        <div style={{ marginTop: '1.5rem', fontSize: '1.3rem', fontWeight: 700 }}>{data.reviews?.count || '0'} Reviews</div>
                                     </div>
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', maxWidth: '500px', margin: '0 auto' }}>
-                                        Sentiment data aggregated directly from official Google citation sources.
+
+                                    {/* Star Breakdown Section */}
+                                    {data.reviews?.breakdown && (
+                                        <div style={{ padding: '2.5rem', background: 'var(--bg-page)', borderRadius: '24px', border: '1px solid var(--border-light)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
+                                                <div style={{ width: '8px', height: '24px', background: '#FFD166', borderRadius: '4px' }}></div>
+                                                <strong style={{ fontSize: '1.2rem', fontWeight: 800 }}>Rating Breakdown</strong>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                {[5, 4, 3, 2, 1].map((stars) => {
+                                                    const count = data.reviews.breakdown[stars] || 0;
+                                                    const total = parseInt(data.reviews.count) || 1;
+                                                    const percentage = total > 0 ? (count / total) * 100 : 0;
+                                                    return (
+                                                        <div key={stars} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                            <div style={{ minWidth: '80px', fontWeight: 600, fontSize: '0.95rem' }}>
+                                                                {'⭐'.repeat(stars)} {stars} Star
+                                                            </div>
+                                                            <div style={{ flex: 1, background: 'var(--bg-page)', height: '20px', borderRadius: '8px', position: 'relative', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                                                                <div style={{ 
+                                                                    height: '100%', 
+                                                                    width: `${percentage}%`, 
+                                                                    background: `hsl(${(5 - stars) * 12}, 80%, 55%)`,
+                                                                    borderRadius: '8px',
+                                                                    transition: 'width 0.3s ease'
+                                                                }} />
+                                                            </div>
+                                                            <div style={{ minWidth: '60px', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                                                {count} ({percentage.toFixed(0)}%)
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', textAlign: 'center' }}>
+                                        Sentiment data aggregated directly from official Google citation sources. Star distribution shows the composition of all reviews.
                                     </p>
                                 </div>
                             )}
